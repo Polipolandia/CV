@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Gratta e Scopri</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;600;800&family=Bungee&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: un biglietto da grattare verticale. Sei caselle coprono le sezioni del CV; la patina si toglie solo dove si gratta, con trucioli che cadono. */
+:root {
+  color-scheme: dark;
+  --ground: #1d1553;
+  --ticket: #d6006f;
+  --ticket-dark: #a8005a;
+  --yellow: #ffd21f;
+  --ink: #1a1238;
+  --paper: #ffffff;
+  --muted: #5a5476;
+  --on-ticket: #ffffff;
+  --font-display: "Bungee", "Impact", "Arial Black", sans-serif;
+  --font-body: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-block: 24px 44px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.stage { max-width: 880px; margin-inline: auto; display: grid; gap: 18px; }
+
+/* Barra superiore */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; color: var(--on-ticket); }
+.progress { flex: 1 1 220px; min-width: 0; }
+.progress p { margin: 0 0 6px; font: 600 13px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.track { height: 8px; background: rgba(255,255,255,.22); border-radius: 99px; overflow: hidden; }
+.bar { height: 100%; width: 0; background: var(--yellow); transition: width .2s linear; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: 700 14px var(--font-body);
+  border-radius: 8px; padding: 10px 16px; min-height: 44px;
+  cursor: pointer; border: 2px solid var(--yellow);
+}
+.btn-primary { background: var(--yellow); color: var(--ink); }
+.btn-ghost { background: transparent; color: var(--on-ticket); }
+.btn-ghost[aria-pressed="true"] { background: rgba(255,210,31,.18); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+
+/* Biglietto */
+.ticket {
+  position: relative;
+  background-color: var(--ticket);
+  background-image: repeating-linear-gradient(135deg, transparent 0 22px, rgba(0,0,0,.07) 22px 44px);
+  border-radius: 14px;
+  padding: 38px clamp(14px, 3vw, 28px) 30px;
+  box-shadow: 0 18px 0 -6px rgba(0,0,0,.25), 0 30px 60px rgba(0,0,0,.45);
+}
+.ticket::before, .ticket::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 14px;
+  background: radial-gradient(circle at 12px 0, var(--ground) 8px, transparent 8.5px) 0 0 / 24px 14px repeat-x;
+}
+.ticket::before { top: 0; }
+.ticket::after { bottom: 0; transform: scaleY(-1); }
+
+.serial { margin: 0 0 8px; font: 600 12px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--on-ticket); }
+h1 {
+  margin: 0; font: 400 clamp(40px, 11vw, 92px)/.95 var(--font-display);
+  color: var(--yellow); text-transform: uppercase; text-wrap: balance;
+  text-shadow: 0 3px 0 var(--ink), 0 6px 0 var(--ink), 0 9px 0 rgba(26,18,56,.55);
+}
+.name {
+  display: inline-block; margin: 26px 0 0; background: var(--yellow); color: var(--ink);
+  font: 400 clamp(18px, 4.6vw, 28px)/1.1 var(--font-display);
+  padding: 10px 14px; border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+}
+.role { margin: 16px 0 0; color: var(--on-ticket); font: 600 clamp(15px, 3.6vw, 19px)/1.3 var(--font-body); text-wrap: balance; }
+.how { margin: 22px 0 26px; padding: 10px 14px; background: rgba(26,18,56,.4); color: var(--on-ticket); border-radius: 8px; font-size: 14px; max-width: 65ch; }
+
+/* Caselle */
+.boxes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 20px; }
+.wide { grid-column: 1 / -1; }
+@media (max-width: 700px) { .boxes { grid-template-columns: minmax(0, 1fr); } }
+.slot { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.tag { margin: 0; display: flex; justify-content: space-between; gap: 8px; font: 600 12px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--on-ticket); }
+.tag .pct { font-variant-numeric: tabular-nums; opacity: .85; }
+.cell {
+  position: relative; flex: 1;
+  border: 3px solid var(--ink); border-radius: var(--radius);
+  background: var(--paper); box-shadow: 5px 5px 0 var(--ink);
+}
+.face { padding: 18px 20px; min-width: 0; }
+.face h3 { margin: 0 0 2px; font: 800 17px/1.3 var(--font-body); }
+.meta { margin: 0 0 10px; font: 500 13px var(--font-mono); color: var(--muted); }
+.face p { margin: 0; max-width: 70ch; }
+.face ul { margin: 0; padding-left: 1.15em; display: grid; gap: 7px; }
+.face li::marker { color: var(--ticket); }
+
+.jobs { display: grid; gap: 14px; }
+.job h3 { font-size: 15px; }
+.job .meta { margin-bottom: 4px; }
+
+dl.skills { display: grid; gap: 14px; margin: 0; }
+dt { margin-bottom: 5px; font: 600 12px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ticket-dark); }
+dd { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 2px solid var(--ink); border-radius: 99px; padding: 1px 10px; font-size: 13px; font-weight: 600; background: var(--paper); color: var(--ink); }
+
+.contact-cell .face { background: var(--yellow); border-radius: calc(var(--radius) - 3px); }
+.contact { display: grid; gap: 10px; font: 500 14px var(--font-mono); }
+.contact .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.contact .k { min-width: 5.5em; color: var(--ticket-dark); font-weight: 600; }
+.contact .v { min-width: 0; overflow-wrap: anywhere; color: var(--ink); }
+.contact a { color: var(--ink); }
+.copy { min-height: 36px; padding: 6px 12px; font-size: 13px; background: var(--paper); color: var(--ink); border-color: var(--ink); }
+
+/* Patina argentata */
+.foil {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border-radius: calc(var(--radius) - 3px);
+  display: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  background: transparent;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23ffd21f' stroke='%231a1238' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%231a1238' stroke-width='2'/%3E%3C/svg%3E") 16 16, crosshair;
+}
+.js-on .foil { display: block; }
+.cell.done .foil { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .5s ease, visibility 0s .5s; }
+
+/* Trucioli che cadono mentre si gratta */
+#flakes { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+
+/* Tagliando in fondo */
+.stub {
+  margin-top: 30px; padding-top: 20px;
+  border-top: 3px dashed rgba(255,255,255,.55);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+  color: var(--on-ticket);
+}
+.stub-text { display: grid; gap: 4px; font: 600 12px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.stub-text p { margin: 0; }
+.barcode-box { background: var(--paper); padding: 8px 10px 6px; border-radius: 4px; display: grid; justify-items: center; gap: 2px; max-width: 100%; }
+#barcode { display: block; width: 200px; max-width: 100%; height: 46px; }
+.barcode-box span { font: 600 11px var(--font-mono); letter-spacing: .2em; color: var(--ink); }
+.stamp {
+  font: 400 20px var(--font-display); color: var(--yellow); border: 3px solid var(--yellow);
+  padding: 4px 12px; border-radius: 6px; opacity: 0; transform: scale(1.8) rotate(-8deg);
+  transition: opacity .25s ease, transform .35s cubic-bezier(.2,1.4,.4,1);
+}
+.won .stamp { opacity: 1; transform: scale(1) rotate(-6deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar, .stamp, .cell.done .foil { transition: none; }
+}
+</style>
+
+<main class="stage">
+  <div class="toolbar">
+    <div class="progress">
+      <p id="count" aria-live="polite">CV scoperto al 0%</p>
+      <div class="track"><div class="bar" id="bar"></div></div>
+    </div>
+    <div class="btns">
+      <button type="button" class="btn-primary" id="revealAll">Gratta tutto</button>
+      <button type="button" class="btn-ghost" id="soundBtn" aria-pressed="true">Suono: acceso</button>
+      <button type="button" class="btn-ghost" id="resetAll">Ricomincia</button>
+    </div>
+  </div>
+
+  <article class="ticket" id="ticket">
+    <p class="serial">Curriculum vitae · Edizione 2026</p>
+    <h1>Gratta &amp; Scopri</h1>
+    <p class="name">Damiano Allegretti</p>
+    <p class="role">Software Developer &amp; Consultant · Integrazione dati con ERP e WMS · Product Specialist Loftware</p>
+    <p class="how">Tieni premuto e gratta le caselle argentate con il mouse o con il dito: la patina si toglie esattamente dove passi. Sul telefono, per scorrere tocca i bordi del biglietto, fuori dalle caselle. Il tasto "Gratta tutto" scopre l'intero CV.</p>
+
+    <div class="boxes">
+      <section class="slot wide">
+        <h2 class="tag"><span>Profilo</span><span class="pct" aria-hidden="true">0%</span></h2>
+        <div class="cell" data-label="Profilo">
+          <div class="face">
+            <p>Sviluppatore e consulente in progetti per aziende di logistica, alimentare, medicale e metalmeccanico. Analizzo i processi di produzione e magazzino, progetto soluzioni che ricevono e gestiscono i dati di ERP e WMS e le seguo fino all'avvio, con giornate di analisi e trasferte presso i clienti.</p>
+          </div>
+          <canvas class="foil" aria-hidden="true"></canvas>
+        </div>
+      </section>
+
+      <section class="slot wide">
+        <h2 class="tag"><span>Esperienza attuale</span><span class="pct" aria-hidden="true">0%</span></h2>
+        <div class="cell" data-label="Esperienza attuale">
+          <div class="face">
+            <h3>Software Developer &amp; Consultant (Product Specialist Loftware)</h3>
+            <p class="meta">Tutto per l'Imballo SpA, Guastalla (RE) · maggio 2024 – oggi</p>
+            <ul>
+              <li>Analizzo i processi di produzione e magazzino dei clienti con giornate di analisi in sede e trasferte, e trasformo le loro esigenze in requisiti di progetto.</li>
+              <li>Progetto e sviluppo soluzioni di etichettatura e stampa industriale che ricevono i dati da ERP e WMS: definisco con il cliente i dati necessari e li gestisco in JSON e CSV via API, HTTP/HTTPS e TCP/IP, script in SQL, Python e VBScript.</li>
+              <li>Gestisco i progetti dall'analisi all'avvio come referente del cliente, in coordinamento con operatori di produzione, tecnici di laboratorio, sviluppatori dei gestionali, referenti esterni e direzione.</li>
+              <li>Svolgo con il cliente i test e la documentazione di progetto, installo le soluzioni e formo gli utenti presso le loro sedi; dopo l'avvio fornisco assistenza applicativa e risolvo i problemi tecnici.</li>
+            </ul>
+          </div>
+          <canvas class="foil" aria-hidden="true"></canvas>
+        </div>
+      </section>
+
+      <section class="slot">
+        <h2 class="tag"><span>Esperienze precedenti</span><span class="pct" aria-hidden="true">0%</span></h2>
+        <div class="cell" data-label="Esperienze">
+          <div class="face jobs">
+            <div class="job">
+              <h3>Docente</h3>
+              <p class="meta">CFP Bassa Reggiana · mar – mag 2024</p>
+              <p>20 ore nel progetto Verso Itaca 2023-24 (Regione Emilia-Romagna): informatica di base, Excel, intelligenza artificiale e Google Workspace.</p>
+            </div>
+            <div class="job">
+              <h3>Collaboratore ricerca e sviluppo (part-time)</h3>
+              <p class="meta">Elaboro.io · ott 2022 – mag 2024</p>
+              <p>Collaborazione alla progettazione di Adunanza.10, percorso sul lavoro digitale per circa 20 studenti delle superiori.</p>
+            </div>
+            <div class="job">
+              <h3>Ragioniere contabile</h3>
+              <p class="meta">Publika Servizi Srl · lug 2022 – lug 2023</p>
+              <p>Contabilità economica degli enti locali con Excel (formule e tabelle pivot) e gestionali; assistenza ai funzionari comunali.</p>
+            </div>
+            <div class="job">
+              <h3>Programmatore software (alternanza scuola-lavoro)</h3>
+              <p class="meta">Tutto per l'Imballo SpA · giu – lug 2018</p>
+              <p>Programmazione di etichette in NiceLabel e gestione dei relativi database nel reparto marcatura.</p>
+            </div>
+          </div>
+          <canvas class="foil" aria-hidden="true"></canvas>
+        </div>
+      </section>
+
+      <section class="slot">
+        <h2 class="tag"><span>Competenze</span><span class="pct" aria-hidden="true">0%</span></h2>
+        <div class="cell" data-label="Competenze">
+          <div class="face">
+            <dl class="skills">
+              <div><dt>Analisi e progetti</dt><dd><span class="chip">Analisi dei processi</span><span class="chip">Raccolta dei requisiti</span><span class="chip">Test e documentazione</span><span class="chip">Gestione progetti</span><span class="chip">Formazione utenti</span><span class="chip">Assistenza applicativa</span></dd></div>
+              <div><dt>Sistemi</dt><dd><span class="chip">Integrazione dati con ERP e WMS</span><span class="chip">Loftware NiceLabel</span><span class="chip">Zebra</span><span class="chip">Honeywell</span><span class="chip">Brady</span><span class="chip">Epson</span></dd></div>
+              <div><dt>Linguaggi e dati</dt><dd><span class="chip">SQL</span><span class="chip">Python</span><span class="chip">VBScript</span><span class="chip">JSON</span><span class="chip">CSV</span><span class="chip">API</span><span class="chip">HTTP/HTTPS</span><span class="chip">TCP/IP</span></dd></div>
+              <div><dt>Strumenti</dt><dd><span class="chip">Microsoft Office</span><span class="chip">Excel (formule e tabelle pivot)</span><span class="chip">Google Workspace</span></dd></div>
+            </dl>
+          </div>
+          <canvas class="foil" aria-hidden="true"></canvas>
+        </div>
+      </section>
+
+      <section class="slot">
+        <h2 class="tag"><span>Formazione e lingue</span><span class="pct" aria-hidden="true">0%</span></h2>
+        <div class="cell" data-label="Formazione">
+          <div class="face">
+            <ul>
+              <li><strong>Scienze giuridiche dell'impresa e della pubblica amministrazione</strong>, Università di Modena e Reggio Emilia: in corso, manca l'ultimo esame.</li>
+              <li><strong>Diploma in Informatica e Telecomunicazioni</strong>, I.I.S. Blaise Pascal, Reggio Emilia, 2019.</li>
+              <li><strong>Certificazioni:</strong> attestati dei corsi Loftware.</li>
+              <li><strong>Lingue:</strong> italiano madrelingua, inglese B1.</li>
+              <li><strong>Patente B</strong>, automunito.</li>
+            </ul>
+          </div>
+          <canvas class="foil" aria-hidden="true"></canvas>
+        </div>
+      </section>
+
+      <section class="slot">
+        <h2 class="tag"><span>Contatti</span><span class="pct" aria-hidden="true">0%</span></h2>
+        <div class="cell contact-cell" data-label="Contatti">
+          <div class="face">
+            <div class="contact">
+              <div class="row"><span class="k">Email</span><span class="v" id="v-mail">allegrettidamiano@gmail.com</span><button type="button" class="copy" data-copy="v-mail">Copia</button></div>
+              <div class="row"><span class="k">LinkedIn</span><a class="v" href="https://www.linkedin.com/in/damiano-allegretti-719a502b4" target="_blank" rel="noopener">damiano-allegretti-719a502b4</a></div>
+            </div>
+          </div>
+          <canvas class="foil" aria-hidden="true"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <div class="stub">
+      <div class="stub-text">
+        <p>Damiano Allegretti</p>
+        <p>Curriculum vitae · novembre 2026</p>
+      </div>
+      <span class="stamp" aria-hidden="true">Scoperto</span>
+      <div class="barcode-box" aria-hidden="true">
+        <canvas id="barcode" width="400" height="92"></canvas>
+        <span>CV·DA·2026</span>
+      </div>
+    </div>
+  </article>
+</main>
+<canvas id="flakes" aria-hidden="true"></canvas>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  root.classList.add('js-on');
+
+  var DISPLAY = '"Bungee","Impact","Arial Black",sans-serif';
+  var MONO = '"IBM Plex Mono",ui-monospace,Menlo,monospace';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cells = [].slice.call(document.querySelectorAll('.cell'));
+  var ticket = document.getElementById('ticket');
+  var countEl = document.getElementById('count');
+  var barEl = document.getElementById('bar');
+  var states = [];
+  var mini = document.createElement('canvas');
+  var mctx = mini.getContext('2d', { willReadFrequently: true });
+
+  function rng(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  /* Codice a barre decorativo del tagliando */
+  (function drawBarcode() {
+    var c = document.getElementById('barcode');
+    if (!c) return;
+    var ctx = c.getContext('2d'), r = rng(2018), x = 8;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = '#1a1238';
+    while (x < c.width - 8) {
+      var w = 2 + Math.floor(r() * 4) * 2;
+      if (x + w > c.width - 8) break;
+      ctx.fillRect(x, 0, w, c.height);
+      x += w + 2 + Math.floor(r() * 3) * 2;
+    }
+  })();
+
+  /* ---------- Trucioli ---------- */
+  var fl = document.getElementById('flakes'), fctx = fl.getContext('2d');
+  var flakes = [], flRunning = false;
+  function sizeFlakes() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    fl.width = Math.round(innerWidth * dpr); fl.height = Math.round(innerHeight * dpr);
+    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  sizeFlakes(); addEventListener('resize', sizeFlakes);
+  var flakeColors = ['#e9ebf1', '#c3c7d4', '#a9aebd', '#f6f7fa', '#8d92a3'];
+  function spawnFlakes(x, y, n) {
+    if (reduce) return;
+    for (var i = 0; i < n; i++) {
+      flakes.push({
+        x: x + (Math.random() - .5) * 18, y: y + (Math.random() - .5) * 10,
+        vx: (Math.random() - .5) * 2.4, vy: -Math.random() * 1.6,
+        s: 1.5 + Math.random() * 3.2, rot: Math.random() * Math.PI, vr: (Math.random() - .5) * .3,
+        life: 1, c: flakeColors[(Math.random() * flakeColors.length) | 0]
+      });
+    }
+    if (flakes.length > 400) flakes.splice(0, flakes.length - 400);
+    if (!flRunning) { flRunning = true; requestAnimationFrame(tickFlakes); }
+  }
+  function tickFlakes() {
+    fctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (var i = flakes.length - 1; i >= 0; i--) {
+      var f = flakes[i];
+      f.vy += .18; f.vx *= .985; f.x += f.vx; f.y += f.vy; f.rot += f.vr; f.life -= .012;
+      if (f.life <= 0 || f.y > innerHeight + 20) { flakes.splice(i, 1); continue; }
+      fctx.save();
+      fctx.globalAlpha = Math.min(1, f.life * 1.6);
+      fctx.translate(f.x, f.y); fctx.rotate(f.rot);
+      fctx.fillStyle = f.c; fctx.fillRect(-f.s / 2, -f.s / 3, f.s, f.s * .66);
+      fctx.restore();
+    }
+    if (flakes.length) requestAnimationFrame(tickFlakes); else { flRunning = false; fctx.clearRect(0, 0, innerWidth, innerHeight); }
+  }
+
+  /* ---------- Suoni di prova: il pulsante scorre tra le varianti ---------- */
+  var MODES = ['spento', 'morbido'];
+  var modeIdx = 1, audio = null, pink = null, white = null, out = null, loop = null, nextTick = 0;
+  var soundBtn = document.getElementById('soundBtn');
+  function makeBuffers() {
+    var sr = audio.sampleRate, n = sr * 2, i;
+    var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    pink = audio.createBuffer(1, n, sr); white = audio.createBuffer(1, n, sr);
+    var p = pink.getChannelData(0), w = white.getChannelData(0);
+    for (i = 0; i < n; i++) {
+      var x = Math.random() * 2 - 1; w[i] = x;
+      b0 = .99886 * b0 + x * .0555179; b1 = .99332 * b1 + x * .0750759; b2 = .969 * b2 + x * .153852;
+      b3 = .8665 * b3 + x * .3104856; b4 = .55 * b4 + x * .5329522; b5 = -.7616 * b5 - x * .016898;
+      p[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + x * .5362) * .11; b6 = x * .115926;
+    }
+    var comp = audio.createDynamicsCompressor();
+    comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 6; comp.attack.value = .003; comp.release.value = .12;
+    out = audio.createGain(); out.gain.value = .7;
+    out.connect(comp); comp.connect(audio.destination);
+  }
+  function stopLoop() {
+    if (!loop) return;
+    try { loop.src.stop(); if (loop.lfo) loop.lfo.stop(); } catch (_) {}
+    loop = null;
+  }
+  function startLoop(mode) {
+    var rasp = mode === 'raschio';
+    var src = audio.createBufferSource(); src.buffer = pink; src.loop = true;
+    var hp = audio.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = rasp ? 500 : 250;
+    var bp = audio.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = rasp ? .9 : .5; bp.frequency.value = rasp ? 1900 : 1000;
+    var lp = audio.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = rasp ? 6000 : 2800;
+    var am = audio.createGain(); am.gain.value = 1;
+    var g = audio.createGain(); g.gain.value = 0;
+    src.connect(hp); hp.connect(bp); bp.connect(lp); lp.connect(am); am.connect(g); g.connect(out);
+    var lfo = null;
+    if (rasp) {
+      lfo = audio.createOscillator(); lfo.type = 'sawtooth'; lfo.frequency.value = 35;
+      var depth = audio.createGain(); depth.gain.value = .45;
+      lfo.connect(depth); depth.connect(am.gain); lfo.start();
+    }
+    src.start();
+    loop = { src: src, g: g, bp: bp, lfo: lfo };
+  }
+  soundBtn.addEventListener('click', function () {
+    modeIdx = (modeIdx + 1) % MODES.length;
+    var mode = MODES[modeIdx];
+    soundBtn.textContent = mode === 'spento' ? 'Suono: spento' : 'Suono: acceso';
+    soundBtn.setAttribute('aria-pressed', String(mode !== 'spento'));
+    if (mode !== 'spento' && !audio) {
+      try { audio = new (window.AudioContext || window.webkitAudioContext)(); makeBuffers(); } catch (_) { audio = null; }
+    }
+    if (audio && audio.state !== 'running') { try { audio.resume(); } catch (_) {} }
+    if (!audio) return;
+    if (mode === 'spento') { if (silentEl) silentEl.pause(); } else unlockIOS();
+    stopLoop();
+    if (mode === 'raschio' || mode === 'morbido') startLoop(mode);
+  });
+  /* Il suono e' attivo di default: il browser lo sblocca al primo tocco o click sulla pagina */
+  /* iPhone: l'audio va sbloccato con un suono reale dentro il tocco, e la sessione va messa in "riproduzione" perche' il tasto silenzioso non lo zittisca */
+  var silentEl = null;
+  function unlockIOS() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+    try {
+      if (!silentEl) {
+        var sr = 8000, n = 4000, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+        var s = function (o, str) { for (var i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+        s(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); s(8, 'WAVE'); s(12, 'fmt '); v.setUint32(16, 16, true);
+        v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
+        v.setUint16(32, 2, true); v.setUint16(34, 16, true); s(36, 'data'); v.setUint32(40, n * 2, true);
+        silentEl = new Audio(URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })));
+        silentEl.loop = true; silentEl.setAttribute('playsinline', ''); silentEl.preload = 'auto';
+      }
+      if (silentEl.paused) { var pr = silentEl.play(); if (pr && pr.catch) pr.catch(function () {}); }
+    } catch (_) {}
+    if (audio) {
+      try {
+        var b = audio.createBuffer(1, 1, 22050), src = audio.createBufferSource();
+        src.buffer = b; src.connect(audio.destination); src.start(0);
+      } catch (_) {}
+    }
+  }
+  function ensureAudio() {
+    if (MODES[modeIdx] === 'spento') return;
+    if (!audio) {
+      try { audio = new (window.AudioContext || window.webkitAudioContext)(); makeBuffers(); } catch (_) { audio = null; return; }
+    }
+    if (audio.state !== 'running') { try { audio.resume(); } catch (_) {} }
+    unlockIOS();
+  }
+  ['pointerdown', 'touchend', 'click'].forEach(function (ev) { document.addEventListener(ev, ensureAudio, { capture: true, passive: true }); });
+  function tick(t, vol) {
+    var src = audio.createBufferSource(); src.buffer = white;
+    var bp = audio.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500 + Math.random() * 700; bp.Q.value = 1.1;
+    var lp = audio.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4500;
+    var g = audio.createGain(), len = .012 + Math.random() * .006;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + len * .4);
+    g.gain.linearRampToValueAtTime(0, t + len);
+    src.connect(bp); bp.connect(lp); lp.connect(g); g.connect(out);
+    src.start(t, Math.random() * 1.8, len + .01);
+  }
+  function scratchSound(speed) {
+    var mode = MODES[modeIdx];
+    if (mode === 'spento' || !audio) return;
+    var now = audio.currentTime;
+    try {
+      if (mode === 'a scatti') {
+        var rate = Math.min(90, 28 + speed * 2.2), vol = Math.min(.5, .12 + speed * .02);
+        if (nextTick < now) nextTick = now;
+        while (nextTick < now + .06) { tick(nextTick, vol * (.75 + Math.random() * .25)); nextTick += 1 / rate; }
+        return;
+      }
+      if (!loop) startLoop(mode);
+      var target = Math.min(.7, .1 + speed * .035);
+      loop.g.gain.cancelScheduledValues(now);
+      loop.g.gain.setTargetAtTime(target, now, .025);
+      loop.g.gain.setTargetAtTime(0, now + .045, .035);
+      if (mode === 'raschio' && loop.lfo) loop.lfo.frequency.setTargetAtTime(Math.min(70, 25 + speed * 1.5), now, .03);
+      if (mode === 'morbido') loop.bp.frequency.setTargetAtTime(Math.min(1900, 800 + speed * 45), now, .06);
+    } catch (_) {}
+  }
+
+  /* ---------- Patina ---------- */
+  function drawFoil(st) {
+    var ctx = st.ctx, w = st.w, h = st.h, dpr = st.dpr, i, x, y;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.clearRect(0, 0, w, h);
+
+    var g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, '#bfc3d1'); g.addColorStop(.28, '#f3f4f8'); g.addColorStop(.5, '#b7bbc9');
+    g.addColorStop(.75, '#eef0f5'); g.addColorStop(1, '#a9aebd');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = 'rgba(70,76,105,.13)'; ctx.lineWidth = 1;
+    for (x = -h; x < w; x += 11) { ctx.beginPath(); ctx.moveTo(x, h); ctx.lineTo(x + h, 0); ctx.stroke(); }
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(60,66,98,.14)'; ctx.font = '400 13px ' + DISPLAY; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    var row = 0;
+    for (y = 18; y < h; y += 30, row++) {
+      for (x = (row % 2) * 34; x < w; x += 68) ctx.fillText('CV', x, y);
+    }
+    ctx.restore();
+
+    var r = rng(st.seed), n = Math.round(w * h / 40);
+    for (i = 0; i < n; i++) {
+      ctx.fillStyle = r() > .5 ? 'rgba(255,255,255,.35)' : 'rgba(40,44,70,.18)';
+      ctx.fillRect(r() * w, r() * h, 1.2, 1.2);
+    }
+
+    ctx.strokeStyle = 'rgba(60,66,98,.45)'; ctx.lineWidth = 2; ctx.strokeRect(5, 5, w - 10, h - 10);
+
+    var big = Math.max(16, Math.min(46, w * .085, h * .32));
+    var cx = w / 2, cy = h / 2;
+    var twoLines = h >= big * 2.8;
+    if (twoLines) cy -= big * .35;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '400 ' + big + 'px ' + DISPLAY;
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillText('GRATTA QUI', cx + 1.5, cy + 1.5);
+    ctx.fillStyle = 'rgba(52,58,90,.82)'; ctx.fillText('GRATTA QUI', cx, cy);
+    if (twoLines) {
+      ctx.font = '600 12px ' + MONO;
+      if ('letterSpacing' in ctx) ctx.letterSpacing = '3px';
+      ctx.fillStyle = 'rgba(52,58,90,.85)';
+      ctx.fillText(st.label.toUpperCase(), cx, cy + big * .95);
+      if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+    }
+  }
+
+  /* Pennello con bordi irregolari, come una moneta sulla patina */
+  function dab(ctx, x, y, rad, seedFn) {
+    ctx.beginPath(); ctx.arc(x, y, rad * .78, 0, Math.PI * 2); ctx.fill();
+    for (var k = 0; k < 5; k++) {
+      var a = seedFn() * Math.PI * 2, d = rad * (.55 + seedFn() * .4);
+      ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, rad * (.18 + seedFn() * .22), 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  function scrapeSegment(st, x0, y0, x1, y1, rad) {
+    var ctx = st.ctx, dx = x1 - x0, dy = y1 - y0, dist = Math.sqrt(dx * dx + dy * dy);
+    var steps = Math.max(1, Math.ceil(dist / (rad * .35)));
+    ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = '#000';
+    for (var i = 0; i <= steps; i++) {
+      var t = i / steps;
+      dab(ctx, x0 + dx * t, y0 + dy * t, rad, Math.random);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function replay(st) {
+    st.strokes.forEach(function (s) {
+      var prev = null;
+      s.pts.forEach(function (p) {
+        var x = p[0] * st.w, y = p[1] * st.h;
+        scrapeSegment(st, prev ? prev[0] : x, prev ? prev[1] : y, x, y, s.r);
+        prev = [x, y];
+      });
+    });
+  }
+
+  function fit(st) {
+    var cr = st.canvas.getBoundingClientRect();
+    var w = Math.round(cr.width), h = Math.round(cr.height);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (w < 2 || h < 2) return;
+    if (w === st.w && h === st.h && dpr === st.dpr) return;
+    st.w = w; st.h = h; st.dpr = dpr;
+    st.canvas.width = Math.round(w * dpr); st.canvas.height = Math.round(h * dpr);
+    if (st.done) return;
+    drawFoil(st); replay(st);
+  }
+
+  /* Misura quanta patina è stata tolta: serve solo a mostrare la percentuale, non sblocca nulla */
+  function measure(st) {
+    if (st.done) { st.frac = 1; return; }
+    if (!st.w) return;
+    var sw = 64, sh = Math.max(4, Math.round(sw * st.h / st.w));
+    mini.width = sw; mini.height = sh;
+    mctx.clearRect(0, 0, sw, sh);
+    mctx.drawImage(st.canvas, 0, 0, sw, sh);
+    var d = mctx.getImageData(0, 0, sw, sh).data, cleared = 0, tot = sw * sh, i;
+    for (i = 3; i < d.length; i += 4) if (d[i] < 128) cleared++;
+    st.frac = cleared / tot;
+  }
+
+  function update() {
+    var sum = 0;
+    states.forEach(function (s) {
+      sum += s.frac;
+      if (s.pctEl) s.pctEl.textContent = Math.round(s.frac * 100) + '%';
+    });
+    var pct = Math.round(sum / states.length * 100);
+    countEl.textContent = 'CV scoperto al ' + pct + '%';
+    barEl.style.width = pct + '%';
+    ticket.classList.toggle('won', pct >= 99);
+  }
+
+  function stroke(st, e) {
+    var r = st.canvas.getBoundingClientRect();
+    var x = e.clientX - r.left, y = e.clientY - r.top;
+    var from = st.last || [x, y];
+    var speed = Math.sqrt(Math.pow(x - from[0], 2) + Math.pow(y - from[1], 2));
+    scrapeSegment(st, from[0], from[1], x, y, st.cur.r);
+    st.last = [x, y];
+    st.cur.pts.push([x / st.w, y / st.h]);
+    spawnFlakes(e.clientX, e.clientY, Math.min(6, 1 + Math.round(speed / 6)));
+    scratchSound(speed);
+    var now = Date.now();
+    if (now - st.lm > 120) { st.lm = now; measure(st); update(); }
+  }
+
+  function bind(st) {
+    var c = st.canvas;
+    c.addEventListener('pointerdown', function (e) {
+      if (st.done) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      try { c.setPointerCapture(e.pointerId); } catch (_) {}
+      st.drawing = true; st.last = null;
+      st.cur = { r: e.pointerType === 'touch' ? 22 : 16, pts: [] };
+      st.strokes.push(st.cur);
+      stroke(st, e);
+    });
+    c.addEventListener('pointermove', function (e) {
+      if (!st.drawing || st.done) return;
+      var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      evs.forEach(function (ev) { stroke(st, ev); });
+    });
+    function end() {
+      if (!st.drawing) return;
+      st.drawing = false; st.last = null;
+      measure(st); update();
+    }
+    c.addEventListener('pointerup', end);
+    c.addEventListener('pointercancel', end);
+    c.addEventListener('lostpointercapture', end);
+  }
+
+  function bindCopy() {
+    [].slice.call(document.querySelectorAll('.copy')).forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var el = document.getElementById(btn.getAttribute('data-copy'));
+        var text = el ? el.textContent : '';
+        function selectIt() {
+          try {
+            var range = document.createRange(); range.selectNodeContents(el);
+            var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+          } catch (_) {}
+          btn.textContent = 'Selezionato';
+        }
+        try {
+          navigator.clipboard.writeText(text).then(function () { btn.textContent = 'Copiato'; }, selectIt);
+        } catch (_) { selectIt(); }
+        setTimeout(function () { btn.textContent = 'Copia'; }, 1800);
+      });
+    });
+  }
+
+  function init() {
+    cells.forEach(function (cell, idx) {
+      var canvas = cell.querySelector('.foil');
+      var slot = cell.closest('.slot');
+      var st = {
+        cell: cell, canvas: canvas, ctx: canvas.getContext('2d'),
+        pctEl: slot ? slot.querySelector('.pct') : null,
+        label: cell.getAttribute('data-label') || '', seed: 7919 * (idx + 3),
+        strokes: [], done: false, frac: 0, w: 0, h: 0, dpr: 1, drawing: false, last: null, cur: null, lm: 0
+      };
+      cell._st = st; states.push(st); bind(st); fit(st);
+    });
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(function (entries) {
+        entries.forEach(function (en) { if (en.target._st) fit(en.target._st); });
+      });
+      cells.forEach(function (c) { ro.observe(c); });
+    } else {
+      addEventListener('resize', function () { states.forEach(fit); });
+    }
+    document.getElementById('revealAll').addEventListener('click', function () {
+      states.forEach(function (s, i) {
+        function go() { s.done = true; s.frac = 1; s.cell.classList.add('done'); update(); }
+        if (reduce) go(); else setTimeout(go, i * 140);
+      });
+    });
+    document.getElementById('resetAll').addEventListener('click', function () {
+      states.forEach(function (s) {
+        s.strokes = []; s.done = false; s.frac = 0; s.drawing = false; s.last = null;
+        s.cell.classList.remove('done'); s.w = 0; fit(s);
+      });
+      update();
+    });
+    bindCopy();
+    update();
+  }
+
+  function start() {
+    try { init(); } catch (err) { root.classList.remove('js-on'); }
+  }
+  var fontsReady = (document.fonts && document.fonts.load)
+    ? Promise.race([document.fonts.load('400 32px Bungee'), new Promise(function (r) { setTimeout(r, 1500); })])
+    : Promise.resolve();
+  fontsReady.then(start, start);
+})();
+</script>
+
+</body>
+</html>
